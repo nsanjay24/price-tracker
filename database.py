@@ -2,29 +2,29 @@
 ********************************************      Price & stock tracker   *********************************************************************
  
 Stores the last known price/stock for each (product, store) pair in a local SQLite database. Each run compares freshly-fetched values against
-what's stored and prints an alert when something changes (price drop,price increase, or a stock status flip). WhatsApp delivery isn't wired
-up yet -- alerts currently just print to the console.
+what's stored and prints an alert when something changes (price drop,price increase, or a stock status flip). Price drops trigger WhatsApp 
+alerts through the WhatsApp Cloud API..
 """
 
 import sqlite3
 from whatsapp.whatsapp import send_whatsapp_message
 
-def get_product(productName, productStore):                                       #To fetch data using funtion
+def get_product(productStore, productId):                                         #To fetch data using funtion
   cursor.execute("""
-    SELECT * FROM Products WHERE Name = ? AND Store = ?
-  """, (productName, productStore))
-  return(cursor.fetchone())                                   #Will print value of only one product
+    SELECT * FROM Products WHERE Store = ? AND ProductId = ?
+  """, (productStore, productId))
+  return(cursor.fetchone())                                                       #Will print value of only one product
 
-def add_product(productName, productStore, productPrice, productStock):           #To add data into the table using function
+def add_product(productName, productStore, productId, productPrice, productStock):           #To add data into the table using function
   cursor.execute("""
-  INSERT INTO Products (Name, Store, Price, Stock) VALUES (?, ?, ?, ?)
-  """,(productName, productStore, productPrice, productStock))
+  INSERT INTO Products (Name, Store, productId, Price, Stock) VALUES (?, ?, ?, ?, ?)
+  """,(productName, productStore, productId, productPrice, productStock))
   connection.commit()
-  
-def update_product(productName, productStore, productPrice, productStock):        #To update product details (Price/Stock) using function
+
+def update_product(productStore, productId, productPrice, productStock):        #To update product details (Price/Stock) using function
   cursor.execute("""
-  UPDATE Products SET Price = ?, Stock = ? WHERE Name = ? AND Store = ?
-  """,(productPrice, productStock, productName, productStore))
+  UPDATE Products SET Price = ?, Stock = ? WHERE Store = ? AND ProductId = ?
+  """,(productPrice, productStock, productStore, productId))
   connection.commit()
 
 def priceChange(newPrice, oldPrice):                                              #To check if there is a change in price                    
@@ -58,15 +58,15 @@ def create_alert(name, store, oldPrice, newPrice):                              
   """
   return message
 
-def track_product(productName, productStore, productPrice, productStock):         #The actual function which tracks the product by comparing 
-  old_product = get_product(productName, productStore)                            #Fetching and storing the old data into a variable
+def track_product(productName, productStore, productId, productPrice, productStock):         #The actual function which tracks the product by comparing 
+  old_product = get_product(productStore, productId)                              #Fetching and storing the old data into a variable
   #print(old_product)
   if(old_product is None):                                                        #Chcking if product alr exists in our database
     print("This is new item!")
-    add_product(productName, productStore, productPrice, productStock)            #If the product dosent exist we add a new entry into the database
+    add_product(productName, productStore, productId, productPrice, productStock)            #If the product dosent exist we add a new entry into the database
   else:                                                                           #If the product exists in our database then:
-    old_price = old_product[3]                                                    #Extracting old price of the specific product
-    old_stock = old_product[4]                                                    #Exracting old stock status of the specific product
+    old_price = old_product[4]                                                    #Extracting old price of the specific product
+    old_stock = old_product[5]                                                    #Exracting old stock status of the specific product
     # print("Old price : ",old_price)                                             #TO_CHECK
     # print("Old stock : ",old_stock)                                             #TO_CHECK
 
@@ -84,7 +84,7 @@ def track_product(productName, productStore, productPrice, productStock):       
       send_whatsapp_message(productName, productStore, old_price, productPrice)   #This'll trigger the alert mechanism in whatsapp.py
 
 
-    update_product(productName, productStore, productPrice, productStock)         #Updates the database with new changes
+    update_product(productStore, productId, productPrice, productStock)         #Updates the database with new changes
 
 
 #------------------------------------------------------------------------------------------------------------------------------------------------  
@@ -92,12 +92,13 @@ connection = sqlite3.connect('price_tracker.db')
 cursor = connection.cursor()
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS Products(
-Id Integer PRIMARY KEY AUTOINCREMENT,   
-Name Text,
-Store Text,
-Price Integer,
-Stock Text,
-UNIQUE(Name, Store)
+  Id INTEGER PRIMARY KEY AUTOINCREMENT,
+  Name TEXT,
+  Store TEXT,
+  ProductId TEXT,
+  Price INTEGER,
+  Stock TEXT,
+  UNIQUE(Store, ProductId)
 )
 """)
 connection.commit()
@@ -122,7 +123,8 @@ connection.commit()
 if __name__ == "__main__":
   name = "RTX 5070"
   store = "Amazon"
+  pid = "TEST123456"
   price = 58000
   stock = "Yes"
 
-  track_product(name, store, price, stock)
+  track_product(name, store, pid, price, stock)

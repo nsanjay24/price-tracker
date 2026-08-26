@@ -137,11 +137,12 @@ def fetch_product_price(store, product_url):
   if product_id is None:
     print("could not extract product ID")
     return None, None
-  return get_buyhatke_price(store_id, product_id)
+  price, stock = get_buyhatke_price(store_id, product_id)
+  return product_id, price, stock
 
 
 def track_from_url(name, store, product_url):
-  price, stock = fetch_product_price(store, product_url)
+  product_id, price, stock = fetch_product_price(store, product_url)
 
   if price is None:
     print("Could not fetch product data")
@@ -149,10 +150,11 @@ def track_from_url(name, store, product_url):
 
   print("Product:", name)
   print("Store:", store)
+  print("Product Id:", product_id)
   print("Price:", price)
   print("Stock:", stock)
 
-  track_product(name, store, price, stock)
+  track_product(name, store, product_id, price, stock)
 #----------------------------------------------------------------------------------------------------------------------------------
 #Test
 
