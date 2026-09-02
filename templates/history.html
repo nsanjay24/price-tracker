@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Price History</title>
+
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+  >
+</head>
+
+<body>
+
+  <div class="container">
+
+    <div class="card">
+
+      <a href="/">
+        ← Back
+      </a>
+
+      <h1>Price History</h1>
+
+      <p>
+        <strong>Store:</strong>
+        {{ store }}
+      </p>
+
+      <p class="product-id">
+        Product ID: {{ product_id }}
+      </p>
+
+      <p>
+        <strong>Lowest recorded:</strong>
+        ₹{{ lowest_price }}
+      </p>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2>History</h2>
+
+      {% if history %}
+
+        {% for item in history %}
+
+          <div class="history-row">
+
+            <div>
+
+              <strong>
+                ₹{{ item[0] }}
+              </strong>
+
+              <p class="history-date">
+                {{ item[2] }}
+              </p>
+
+            </div>
+
+
+            <div>
+
+              {% if item[1] == "Yes" %}
+
+                <span class="in-stock">
+                  In Stock
+                </span>
+
+              {% else %}
+
+                <span class="out-stock">
+                  Out of Stock
+                </span>
+
+              {% endif %}
+
+            </div>
+
+          </div>
+
+        {% endfor %}
+
+      {% else %}
+
+        <p>
+          No price history available yet.
+        </p>
+
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</body>
+
+</html>

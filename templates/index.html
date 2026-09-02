@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <title>Price Tracker</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+  <div class="container">
+
+    <!-- Add / Track Product Form -->
+    <div class="card">
+
+      <h1>Price Tracker</h1>
+
+      <p class="subtitle">
+        Track Amazon and Flipkart prices in one place.
+      </p>
+
+      <form method="POST">
+
+        <label>Product name</label>
+
+        <input type="text" name="name" placeholder="e.g. Sony WH-CH720N" required>
+
+        <label>Store</label>
+
+        <select name="store">
+          <option value="Amazon">
+            Amazon
+          </option>
+
+          <option value="Flipkart">
+            Flipkart
+          </option>
+        </select>
+
+        <label>Product URL</label>
+
+        <input type="text" name="product_url" placeholder="Paste product URL" required>
+
+        <button type="submit">
+          Track Product
+        </button>
+
+      </form>
+
+      {% if message %}
+      <p class="message">
+        {{ message }}
+      </p>
+      {% endif %}
+
+    </div>
+
+
+    <!-- Newly Submitted Product -->
+    {% if product %}
+    <div class="result-card">
+
+      <h2>
+        {{ product.name }}
+      </h2>
+
+      <p>
+        <strong>Store:</strong>
+        {{ product.store }}
+      </p>
+
+      <p class="price">
+        ₹{{ product.price }}
+      </p>
+
+      <p>
+        <strong>Stock:</strong>
+
+        {% if product.stock == "Yes" %}
+        <span class="in-stock">
+          In Stock
+        </span>
+        {% else %}
+        <span class="out-stock">
+          Out of Stock
+        </span>
+        {% endif %}
+      </p>
+
+      <p class="product-id">
+        Product ID: {{ product.product_id }}
+      </p>
+
+    </div>
+    {% endif %}
+
+
+    <!-- All Tracked Products -->
+    {% if product_cards %}
+    <div class="card">
+
+      <h2>
+        Tracked Products
+      </h2>
+
+      {% for item in product_cards %}
+
+      <div class="tracked-product">
+
+        <div class="tracked-info">
+
+          <h3>
+            {{ item.name }}
+          </h3>
+
+          <p>
+            {{ item.store }}
+          </p>
+
+          <p class="product-id">
+            Product ID: {{ item.product_id }}
+          </p>
+
+          <p>
+            Lowest recorded:
+            ₹{{ item.lowest_price }}
+          </p>
+
+          <p>
+            Checks recorded:
+            {{ item.history_count }}
+          </p>
+
+        </div>
+
+
+        <div class="tracked-status">
+
+          <p class="tracked-price">
+            ₹{{ item.price }}
+          </p>
+
+          {% if item.stock == "Yes" %}
+          <span class="in-stock">
+            In Stock
+          </span>
+          {% else %}
+          <span class="out-stock">
+            Out of Stock
+          </span>
+          {% endif %}
+
+          <a href="{{ url_for('history', store=item.store, product_id=item.product_id) }}" class="history-button">
+            View History
+          </a>
+
+          <form method="POST" action="/delete">
+
+            <input type="hidden" name="store" value="{{ item.store }}">
+
+            <input type="hidden" name="product_id" value="{{ item.product_id }}">
+
+            <button type="submit" class="delete-button">
+              Remove
+            </button>
+
+          </form>
+
+        </div>
+
+      </div>
+
+      {% endfor %}
+
+    </div>
+    {% endif %}
+
+  </div>
+
+</body>
+
+</html>

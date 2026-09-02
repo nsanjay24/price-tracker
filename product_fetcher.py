@@ -145,7 +145,7 @@ def track_from_url(name, store, product_url):
   product_id, price, stock = fetch_product_price(store, product_url)
 
   if price is None:
-    print("Could not fetch product data")
+    # print("Could not fetch product data")
     return
 
   print("Product:", name)
@@ -155,6 +155,9 @@ def track_from_url(name, store, product_url):
   print("Stock:", stock)
 
   track_product(name, store, product_id, price, stock)
+
+  return {"name":name, "store":store, "product_id":product_id, "price":price, "stock":stock}
+
 #----------------------------------------------------------------------------------------------------------------------------------
 #Test
 
