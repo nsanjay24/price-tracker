@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect
-from product_fetcher import track_from_url
-from database import(get_all_products, delete_product, get_lowest_price, get_history_count, get_product_history)
+from product_fetcher import track_from_url, get_buyhatke_price
+from database import(get_all_products, delete_product, get_lowest_price, get_history_count, get_product_history, track_product)
 
 app = Flask(__name__)
 
@@ -11,10 +11,10 @@ def home():
 
   if request.method == "POST":
     name = request.form["name"]
-    store = request.form["store"]
+    # store = request.form["store"]
     product_url = request.form["product_url"]
 
-    product = track_from_url(name, store, product_url)
+    product = track_from_url(name, product_url)
 
     if product is not None:
       message = "Product tracked successfully!"
@@ -67,6 +67,22 @@ def history(store, product_id):
   history = get_product_history(store, product_id)
   lowest_price = get_lowest_price(store, product_id)
   return render_template("history.html", store = store, product_id = product_id, history = history, lowest_price = lowest_price)
+
+@app.route("/refresh", methods = ["POST"])
+def refresh():
+  name = request.form["name"]
+  store = request.form["store"]
+  product_id = request.form["product_id"]
+  if store.lower() == "amazon":
+    store_id = 63
+  elif store.lower() == "flipkart":
+    store_id = 2
+  else:
+    return redirect("/")
+  price, stock = get_buyhatke_price(store_id, product_id)
+  if price is not None:
+    track_product(name, store, product_id, price, stock)
+  return redirect("/")
 
 if __name__ == "__main__":
   app.run(debug=True)

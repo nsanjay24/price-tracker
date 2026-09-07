@@ -51,6 +51,8 @@ def update_product(productStore, productId, productPrice, productStock):        
   connection.close()
 
 def priceChange(newPrice, oldPrice):                                              #To check if there is a change in price                    
+  newPrice = int(newPrice)
+  oldPrice = int(oldPrice)
   if(newPrice < oldPrice):
     return "dropped"
   elif(newPrice > oldPrice):
@@ -91,7 +93,7 @@ def track_product(productName, productStore, productId, productPrice, productSto
     print("This is new item!")
     add_product(productName, productStore, productId, productPrice, productStock)            #If the product dosent exist we add a new entry into the database
   else:                                                                           #If the product exists in our database then:
-    old_price = old_product[4]                                                    #Extracting old price of the specific product
+    old_price = int(old_product[4])                                                 #Extracting old price of the specific product
     old_stock = old_product[5]                                                    #Exracting old stock status of the specific product
     # print("Old price : ",old_price)                                             #TO_CHECK
     # print("Old stock : ",old_stock)                                             #TO_CHECK

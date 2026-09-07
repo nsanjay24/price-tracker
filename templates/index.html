@@ -27,18 +27,6 @@
 
         <input type="text" name="name" placeholder="e.g. Sony WH-CH720N" required>
 
-        <label>Store</label>
-
-        <select name="store">
-          <option value="Amazon">
-            Amazon
-          </option>
-
-          <option value="Flipkart">
-            Flipkart
-          </option>
-        </select>
-
         <label>Product URL</label>
 
         <input type="text" name="product_url" placeholder="Paste product URL" required>
@@ -155,6 +143,35 @@
           <a href="{{ url_for('history', store=item.store, product_id=item.product_id) }}" class="history-button">
             View History
           </a>
+
+<form method="POST" action="/refresh">
+
+  <input
+    type="hidden"
+    name="name"
+    value="{{ item.name }}"
+  >
+
+  <input
+    type="hidden"
+    name="store"
+    value="{{ item.store }}"
+  >
+
+  <input
+    type="hidden"
+    name="product_id"
+    value="{{ item.product_id }}"
+  >
+
+  <button
+    type="submit"
+    class="refresh-button"
+  >
+    Refresh
+  </button>
+
+</form>
 
           <form method="POST" action="/delete">
 

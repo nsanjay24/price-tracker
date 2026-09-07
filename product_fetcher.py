@@ -141,22 +141,29 @@ def fetch_product_price(store, product_url):
   return product_id, price, stock
 
 
-def track_from_url(name, store, product_url):
+def track_from_url(name, product_url):
+  store = detect_store(product_url)
+
+  if store is None:
+    print("Unsupported store")
+    return None
+
   product_id, price, stock = fetch_product_price(store, product_url)
 
   if price is None:
-    # print("Could not fetch product data")
-    return
-
-  print("Product:", name)
-  print("Store:", store)
-  print("Product Id:", product_id)
-  print("Price:", price)
-  print("Stock:", stock)
-
+    return None
   track_product(name, store, product_id, price, stock)
+  return {"name": name, "store": store, "product_id": product_id, "price": price, "stock": stock}
 
-  return {"name":name, "store":store, "product_id":product_id, "price":price, "stock":stock}
+
+def detect_store(product_url):
+  url = product_url.lower()
+  if "amazon." in url:
+    return "Amazon"
+  if "flipkart." in url:
+    return "Flipkart"
+  return None
+
 
 #----------------------------------------------------------------------------------------------------------------------------------
 #Test
