@@ -6,37 +6,45 @@ what's stored and prints an alert when something changes (price drop,price incre
 alerts through the WhatsApp Cloud API..
 """
 
-import sqlite3
+# import sqlite3
 from whatsapp.whatsapp import send_whatsapp_message
 
+import os, psycopg
+from dotenv import load_dotenv
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+def get_connection():
+  return psycopg.connect(DATABASE_URL)
+
 def get_product(productStore, productId):                                         #To fetch data using funtion
-  connection = sqlite3.connect("price_tracker.db")
+  connection = get_connection()
   cursor = connection.cursor()
 
   cursor.execute("""
-    SELECT * FROM Products WHERE Store = ? AND ProductId = ?
+    SELECT * FROM Products WHERE Store = %s AND ProductId = %s
   """, (productStore, productId))
 
   return(cursor.fetchone())
   connection.close()                                                      #Will print value of only one product
 
 def add_product(productName, productStore, productId, productPrice, productStock):           #To add data into the table using function
-  connection = sqlite3.connect("price_tracker.db")
+  connection = get_connection()
   cursor = connection.cursor()
 
   cursor.execute("""
-  INSERT INTO Products (Name, Store, productId, Price, Stock) VALUES (?, ?, ?, ?, ?)
+  INSERT INTO Products (Name, Store, productId, Price, Stock) VALUES (%s, %s, %s, %s, %s)
   """,(productName, productStore, productId, productPrice, productStock))
 
   connection.commit()
   connection.close()
 
 def update_product(productStore, productId, productPrice, productStock):        #To update product details (Price/Stock) using function
-  connection = sqlite3.connect("price_tracker.db")
+  connection = get_connection()
   cursor = connection.cursor()
 
   cursor.execute("""
-  UPDATE Products SET Price = ?, Stock = ? WHERE Store = ? AND ProductId = ?
+  UPDATE Products SET Price = %s, Stock = %s WHERE Store = %s AND ProductId = %s
   """,(productPrice, productStock, productStore, productId))
 
   connection.commit()
@@ -105,7 +113,7 @@ def track_product(productName, productStore, productId, productPrice, productSto
     update_product(productStore, productId, productPrice, productStock)         #Updates the database with new changes
 
 def get_all_products():
-  connection = sqlite3.connect("price_tracker.db")
+  connection = get_connection()
   cursor = connection.cursor()
 
   cursor.execute("""
@@ -117,23 +125,23 @@ def get_all_products():
   return products
 
 def delete_product(productStore, productId):
-  connection = sqlite3.connect("price_tracker.db")
+  connection = get_connection()
   cursor = connection.cursor()
 
   cursor.execute("""
-  DELETE FROM Products WHERE Store = ? AND ProductId = ?""", (productStore, productId))
+  DELETE FROM Products WHERE Store = %s AND ProductId = %s""", (productStore, productId))
 
   connection.commit()
   connection.close()
 
 def add_price_history(productStore, productId, productPrice, productStock):
-  connection = sqlite3.connect("price_tracker.db")
+  connection = get_connection()
   cursor = connection.cursor()
 
   cursor.execute("""
     INSERT INTO PriceHistory
     (Store, ProductId, Price, Stock)
-    VALUES (?, ?, ?, ?)
+    VALUES (%s, %s, %s, %s)
   """, (
     productStore,
     productId,
@@ -145,85 +153,68 @@ def add_price_history(productStore, productId, productPrice, productStock):
   connection.close()
 
 def get_product_history(productStore, productId):
-  connection = sqlite3.connect("price_tracker.db")
+  connection = get_connection()
   cursor = connection.cursor()
 
-  cursor.execute("""SELECT Price, Stock, CheckedAt FROM PriceHistory WHERE Store = ? AND ProductId = ? ORDER BY CheckedAt DESC""", (productStore, productId))
+  cursor.execute("""SELECT Price, Stock, CheckedAt FROM PriceHistory WHERE Store = %s AND ProductId = %s ORDER BY CheckedAt DESC""", (productStore, productId))
   history = cursor.fetchall()
 
   connection.close()
   return history
 
 def get_lowest_price(productStore, productId):
-  connection = sqlite3.connect("price_tracker.db")
+  connection = get_connection()
   cursor = connection.cursor()
 
-  cursor.execute("""SELECT MIN(Price) FROM PriceHistory WHERE Store = ? AND ProductId = ?""", (productStore, productId))
+  cursor.execute("""SELECT MIN(Price) FROM PriceHistory WHERE Store = %s AND ProductId = %s""", (productStore, productId))
 
   result = cursor.fetchone()
   connection.close()
   return result[0]
 
 def get_history_count(productStore, productId):
-  connection = sqlite3.connect("price_tracker.db")
+  connection = get_connection()
   cursor = connection.cursor()
 
-  cursor.execute("""SELECT COUNT(*) FROM PriceHistory WHERE Store = ? AND ProductId = ?""", (productStore, productId))
+  cursor.execute("""SELECT COUNT(*) FROM PriceHistory WHERE Store = %s AND ProductId = %s""", (productStore, productId))
 
   result = cursor.fetchone()
   connection.close()
   return result[0]
 
 
-#---------------------------------------------------  TEST FUNCTIONS  --------------------------------------------------------------------------
-
-# def get_price_history():
-#   connection = sqlite3.connect("price_tracker.db")
-#   cursor = connection.cursor()
-#   cursor.execute("""
-#     SELECT *
-#     FROM PriceHistory
-#     ORDER BY Id DESC
-#   """)
-#   history = cursor.fetchall()
-#   connection.close()
-#   return history
-
 #------------------------------------------------------------------------------------------------------------------------------------------------  
-connection = sqlite3.connect('price_tracker.db')
-cursor = connection.cursor()
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS Products(
-  Id INTEGER PRIMARY KEY AUTOINCREMENT,
+#--------------------------------------------Create price tracker master table-----------------------------------------
+def create_tables():
+  connection = get_connection()
+  cursor = connection.cursor()
+  cursor.execute("""CREATE TABLE IF NOT EXISTS Products(Id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   Name TEXT,
   Store TEXT,
   ProductId TEXT,
-  Price INTEGER,
+  Price TEXT,
   Stock TEXT,
-  UNIQUE(Store, ProductId)
-)""")
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS PriceHistory(
-  Id INTEGER PRIMARY KEY AUTOINCREMENT,
+  UNIQUE(Store, ProductId))""")
+#--------------------------------------------Create price History table------------------------------------------------
+  cursor.execute("""CREATE TABLE IF NOT EXISTS PriceHistory(Id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   Store TEXT,
   ProductId TEXT,
-  Price INTEGER,
+  Price TEXT,
   Stock TEXT,
-  CheckedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-)
-""")
+  CheckedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
+  connection.commit()
+  cursor.close()
+  connection.close()
 
-connection.commit()
-connection.close()
-
-'''-------------------------------------------------------------To Print the data of the table------------------------------------------------'''
+#-------------------------------------------------------------To Print the data of the table---------------------------------------------------
 # cursor.execute("""SELECT * FROM Products""")              
 # Data = cursor.fetchall()
 # print(Data)
 
-'''--------------------------------------------------------------To inspect data table--------------------------------------------------------'''
+
+
+#--------------------------------------------------------------To inspect data table-----------------------------------------------------------
 # cursor.execute("""
 # SELECT sql
 # FROM sqlite_master
@@ -232,20 +223,11 @@ connection.close()
 # """)
 # print(cursor.fetchone())
 
-#-----------------------------------------------------------------------------------------------------------------------------------------------
 
 
-# if __name__ == "__main__":
-#   name = "RTX 5070"
-#   store = "Amazon"
-#   pid = "TEST123456"
-#   price = 58000
-#   stock = "Yes"
+#---------------------------------------------------  TEST FUNCTIONS  --------------------------------------------------------------------------
 
-#   track_product(name, store, pid, price, stock)
-
-lowest = get_lowest_price(
-  "Amazon",
-  "B0FQF5DG3P"
-)
-print("Lowest price:", lowest)  
+if __name__ == "__main__":
+  create_tables()
+  print("PostgreSQL connection successful!")
+# create_tables()
